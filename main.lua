@@ -11,7 +11,7 @@ function mt.__newindex(t, key, value)
     -- notify clone obj
     if old then
         for _,p in ipairs(t.__proxy_objs) do
-            p[key] = old
+            p:copy_old_value(key, old)
         end
     end
 end
@@ -30,13 +30,17 @@ local function leader_init(origin_table)
 end
 
 function proxy_mt.__index(t, key)
-    return t.__data[key] or self.__ref[key]
+    return t.__data[key] or t.__ref[key] or proxy_mt[key]
+end
+
+function proxy_mt.copy_old_value(slave, key, value)
+    if not slave.__data[key] then
+        slave.__data[key] = value
+    end
 end
 
 function proxy_mt.__newindex(t, key, value)
-    if not t.__data[key] then
-        t.__data[key] = value
-    end
+    t.__data[key] = value
 end
 
 local function mynext(proxy_obj, index)
@@ -107,6 +111,7 @@ local function test()
     print_table(a_slave)
     print("after assign to slave =============================")
     a_slave.b = 8
+    a_proxy.b = 1
     print("a_proxy:")
     print_table(a_proxy)
     print("a_slave:")
